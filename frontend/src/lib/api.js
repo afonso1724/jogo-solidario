@@ -1,4 +1,15 @@
-const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : 'https://jogo-solidario.onrender.com/api')).replace(/\/$/, '');
+function normalizeApiUrl(value) {
+  const trimmed = (value || '').toString().trim().replace(/\/+$|\s+$/g, '');
+  if (!trimmed) {
+    return '';
+  }
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+const API_URL = normalizeApiUrl(
+  import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? 'http://localhost:3001/api' : 'https://jogo-solidario.onrender.com/api')
+);
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, options);
