@@ -107,7 +107,8 @@ export default function AdminDashboard() {
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-brand-black-card text-brand-gray-650">
               <tr>
-                <th className="px-4 py-3">Nome</th>
+                <th className="px-4 py-3">Cliente</th>
+                <th className="px-4 py-3">Quantidade</th>
                 <th className="px-4 py-3">Tipo</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Valor</th>
@@ -118,7 +119,11 @@ export default function AdminDashboard() {
             <tbody>
               {(data?.transacoes || []).map((t) => (
                 <tr key={t.id} className="border-t border-brand-gray-850">
-                  <td className="px-4 py-3 text-white">{t.usuario?.nome}</td>
+                  <td className="px-4 py-3 text-white">
+                    <div className="font-medium">{t.usuario?.nome}</div>
+                    <div className="text-xs text-brand-gray-650">{t.usuario?.email}</div>
+                  </td>
+                  <td className="px-4 py-3">{t.quantidade}</td>
                   <td className="px-4 py-3 capitalize">{t.tipo}</td>
                   <td className="px-4 py-3">
                     <span

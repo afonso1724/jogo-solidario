@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { config } from '../config.js';
 
 export async function gerarBilhetePDF({ nome, email, quantidade, hash, valorTotal }) {
-  const validacaoUrl = `${config.adminFrontendUrl}/admin/validar/${hash}`;
+  const validacaoUrl = `${config.publicApiUrl}/api/validar/${hash}`;
 
   const qrDataUrl = await QRCode.toDataURL(validacaoUrl, {
     width: 200,

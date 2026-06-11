@@ -12,7 +12,64 @@ function calcReservaExpira() {
 }
 
 export function gerarHash() {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.createHash('sha256').update(`${Date.now()}-${Math.random()}-${crypto.randomUUID()}`).digest('hex');
+}
+
+function getStatusInicial(tipo) {
+  return tipo === 'reserva' ? 'reservado' : 'pendente';
+}
+
+function buildTicketPayload({ usuarioId, quantidade, tipo, status, valorUnitario, valorTotal, comprovanteUrl, reservaExpiraEm }) {
+  return {
+    usuario_id: usuarioId,
+    quantidade,
+    tipo,
+    status,
+    valor_unitario: valorUnitario,
+    valor_total: valorTotal,
+    comprovante_url: comprovanteUrl,
+    evento_data: config.eventoData,
+    reserva_expira_em: reservaExpiraEm,
+    status_pagamento: 'PENDENTE',
+  };
+}
+
+async function insertTicketRecord(supabase, payload) {
+  try {
+    const { data, error } = await supabase.from('tickets').insert(payload).select().single();
+    if (error) throw error;
+    return { data };
+  } catch (error) {
+    const message = error?.message || '';
+    if (message.includes('status_pagamento') || message.includes('hash_validacao') || message.includes('does not exist')) {
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.status_pagamento;
+      delete fallbackPayload.hash_validacao;
+      const { data, error: fallbackError } = await supabase.from('tickets').insert(fallbackPayload).select().single();
+      if (fallbackError) throw new Error(fallbackError.message);
+      return { data };
+    }
+    throw error;
+  }
+}
+
+async function updateTicketRecord(supabase, id, payload) {
+  try {
+    const { data, error } = await supabase.from('tickets').update(payload).eq('id', id).select().single();
+    if (error) throw error;
+    return { data };
+  } catch (error) {
+    const message = error?.message || '';
+    if (message.includes('status_pagamento') || message.includes('hash_validacao') || message.includes('does not exist')) {
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.status_pagamento;
+      delete fallbackPayload.hash_validacao;
+      const { data, error: fallbackError } = await supabase.from('tickets').update(fallbackPayload).eq('id', id).select().single();
+      if (fallbackError) throw new Error(fallbackError.message);
+      return { data };
+    }
+    throw error;
+  }
 }
 
 export async function criarTicket({
@@ -36,7 +93,7 @@ export async function criarTicket({
   if (userErr) throw new Error(userErr.message);
 
   let comprovanteUrl = null;
-  let status = tipo === 'reserva' ? 'reservado' : 'pendente';
+  const status = getStatusInicial(tipo);
 
   if (tipo === 'compra' && comprovanteFile) {
     const ext = comprovanteFile.originalname.split('.').pop();
@@ -51,32 +108,23 @@ export async function criarTicket({
 
     if (uploadErr) throw new Error(`Upload comprovativo: ${uploadErr.message}`);
 
-    const { data: urlData } = supabase.storage
-      .from('comprovantes')
-      .getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from('comprovantes').getPublicUrl(path);
 
     comprovanteUrl = urlData.publicUrl;
   }
 
-  const ticketPayload = {
-    usuario_id: usuario.id,
+  const ticketPayload = buildTicketPayload({
+    usuarioId: usuario.id,
     quantidade,
     tipo,
     status,
-    valor_unitario: valorUnitario,
-    valor_total: valorTotal,
-    comprovante_url: comprovanteUrl,
-    evento_data: config.eventoData,
-    reserva_expira_em: tipo === 'reserva' ? calcReservaExpira() : null,
-  };
+    valorUnitario,
+    valorTotal,
+    comprovanteUrl,
+    reservaExpiraEm: tipo === 'reserva' ? calcReservaExpira() : null,
+  });
 
-  const { data: ticket, error: ticketErr } = await supabase
-    .from('tickets')
-    .insert(ticketPayload)
-    .select()
-    .single();
-
-  if (ticketErr) throw new Error(ticketErr.message);
+  const { data: ticket } = await insertTicketRecord(supabase, ticketPayload);
 
   const referencia = ticket.id.slice(0, 8).toUpperCase();
 
@@ -118,18 +166,12 @@ export async function aprovarTicket(ticketId, adminId) {
   }
 
   const hash = gerarHash();
-
-  const { data: updated, error: updateErr } = await supabase
-    .from('tickets')
-    .update({
-      status: 'aprovado',
-      hash_unico: hash,
-    })
-    .eq('id', ticketId)
-    .select('*, usuario:usuarios(*)')
-    .single();
-
-  if (updateErr) throw new Error(updateErr.message);
+  const { data: updated } = await updateTicketRecord(supabase, ticketId, {
+    status: 'aprovado',
+    status_pagamento: 'APROVADO',
+    hash_unico: hash,
+    hash_validacao: hash,
+  });
 
   const usuario = updated.usuario;
   const pdfBuffer = await gerarBilhetePDF({
@@ -154,10 +196,7 @@ export async function aprovarTicket(ticketId, adminId) {
   });
 
   if (adminId) {
-    await supabase
-      .from('tickets')
-      .update({ validado_por: adminId })
-      .eq('id', ticketId);
+    await supabase.from('tickets').update({ validado_por: adminId }).eq('id', ticketId);
   }
 
   return updated;
@@ -166,22 +205,41 @@ export async function aprovarTicket(ticketId, adminId) {
 export async function validarNaPortaria(hash, adminId) {
   const supabase = getSupabase();
 
-  const { data: ticket, error } = await supabase
+  let ticket = null;
+  let error = null;
+
+  const { data: byHashUnico, error: hashUnicoError } = await supabase
     .from('tickets')
     .select('*, usuario:usuarios(*)')
     .eq('hash_unico', hash)
     .single();
 
+  if (!hashUnicoError && byHashUnico) {
+    ticket = byHashUnico;
+  } else {
+    const { data: byHashValidacao, error: hashValidacaoError } = await supabase
+      .from('tickets')
+      .select('*, usuario:usuarios(*)')
+      .eq('hash_validacao', hash)
+      .single();
+    ticket = byHashValidacao;
+    error = hashValidacaoError;
+  }
+
   if (error || !ticket) {
     return { ok: false, message: 'Ingresso não encontrado.' };
   }
 
-  if (ticket.status !== 'aprovado') {
+  const statusPagamento = ticket.status_pagamento || (ticket.status === 'aprovado' ? 'APROVADO' : null);
+  const alreadyUsed = ticket.utilizado === true || ticket.utilizado === 'SIM' || ticket.utilizado === 'sim';
+
+  if (ticket.status !== 'aprovado' && statusPagamento !== 'APROVADO') {
     return { ok: false, message: `Ingresso com status "${ticket.status}". Não autorizado.` };
   }
 
-  if (ticket.utilizado) {
-    return { ok: false, message: 'Este ingresso já foi utilizado.' };
+  if (alreadyUsed) {
+    const usedAt = ticket.utilizado_em ? new Date(ticket.utilizado_em).toLocaleString('pt-PT') : 'desconhecido';
+    return { ok: false, message: `ALERTA: Este ingresso já foi utilizado em ${usedAt}!` };
   }
 
   const { error: updateErr } = await supabase
@@ -198,19 +256,9 @@ export async function validarNaPortaria(hash, adminId) {
     return { ok: false, message: 'Erro ao marcar ingresso como utilizado.' };
   }
 
-  const { data: check } = await supabase
-    .from('tickets')
-    .select('utilizado')
-    .eq('id', ticket.id)
-    .single();
-
-  if (!check?.utilizado) {
-    return { ok: false, message: 'Entrada já registada por outro dispositivo.' };
-  }
-
   return {
     ok: true,
-    message: 'Entrada autorizada com sucesso!',
+    message: 'Entrada Liberada!',
     ticket: {
       nome: ticket.usuario?.nome,
       quantidade: ticket.quantidade,

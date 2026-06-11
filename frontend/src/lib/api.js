@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : 'https://jogo-solidario.onrender.com/api')).replace(/\/$/, '');
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, options);

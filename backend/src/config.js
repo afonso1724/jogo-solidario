@@ -1,11 +1,17 @@
 import 'dotenv/config';
 
+const defaultFrontendUrl = process.env.FRONTEND_URL || process.env.VITE_APP_URL || 'https://jogo-solidario.vercel.app';
+const defaultApiUrl = process.env.PUBLIC_API_URL || process.env.BACKEND_URL || 'https://jogo-solidario.onrender.com';
+
 export const config = {
   port: Number(process.env.PORT) || 3001,
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseKey: process.env.SUPABASE_SERVICE_KEY,
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
-  adminFrontendUrl: process.env.ADMIN_FRONTEND_URL || 'http://localhost:5173',
+  frontendUrl: defaultFrontendUrl,
+  adminFrontendUrl: process.env.ADMIN_FRONTEND_URL || defaultFrontendUrl,
+  publicApiUrl: defaultApiUrl,
+  apiBaseUrl: process.env.API_BASE_URL || `${defaultApiUrl}/api`,
   eventoData: process.env.EVENTO_DATA || '2026-06-15T18:00:00Z',
   ticketPreco: Number(process.env.TICKET_PRECO) || 5000,
   reservaHorasAntes: Number(process.env.RESERVA_HORAS_ANTES) || 48,

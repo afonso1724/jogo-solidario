@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import SobreNos from './components/SobreNos';
@@ -44,7 +44,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<PublicApp />} />
-      <Route path="/admin" element={<AdminLogin />} />
+      <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/validar/:hash" element={<AdminValidar />} />
     </Routes>
