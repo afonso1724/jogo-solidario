@@ -145,7 +145,7 @@ export default function TicketForm() {
         />
         <input
           type="tel"
-          placeholder="Telefone *"
+          placeholder="WhatsApp*"
           value={telefone}
           onChange={(e) => setTelefone(e.target.value)}
           className="input-field"

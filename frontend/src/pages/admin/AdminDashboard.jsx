@@ -39,10 +39,24 @@ export default function AdminDashboard() {
     load();
   }, []);
 
-  const handleAprovar = async (ticketId) => {
+  const handleAprovar = async (ticketId, telefone, nome) => {
     setActionId(ticketId);
     try {
       await validarCompra(token, ticketId);
+      const normalizedPhone = telefone?.replace(/\s+/g, '');
+      const phoneWithCountry = normalizedPhone
+        ? normalizedPhone.startsWith('244')
+          ? normalizedPhone
+          : `244${normalizedPhone}`
+        : null;
+
+      if (phoneWithCountry) {
+        const mensagem = encodeURIComponent(
+          `Olá ${nome}, o seu comprovativo foi validado. Verifique o seu ingresso digital em https://jogo-solidario.vercel.app/ticket/${ticketId}`
+        );
+        window.open(`https://wa.me/${phoneWithCountry}?text=${mensagem}`, '_blank');
+      }
+
       await load();
     } catch (err) {
       alert(err.message);
@@ -161,7 +175,7 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         disabled={actionId === t.id}
-                        onClick={() => handleAprovar(t.id)}
+                        onClick={() => handleAprovar(t.id, t.usuario?.telefone, t.usuario?.nome)}
                         className="btn-primary py-1.5 px-3 text-xs"
                       >
                         {actionId === t.id ? (

@@ -13,7 +13,7 @@ export const config = {
   publicApiUrl: defaultApiUrl,
   apiBaseUrl: process.env.API_BASE_URL || `${defaultApiUrl}/api`,
   eventoData: process.env.EVENTO_DATA || '2026-06-15T18:00:00Z',
-  ticketPreco: Number(process.env.TICKET_PRECO) || 5000,
+  ticketPreco: Number(process.env.TICKET_PRECO) || 1500,
   reservaHorasAntes: Number(process.env.RESERVA_HORAS_ANTES) || 48,
   iban: process.env.IBAN || 'AO06 0000 0000 0000 0000 0000 0',
   smtp: {
