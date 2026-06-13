@@ -1,9 +1,9 @@
-import { ExternalLink, Github, Linkedin, Mail } from 'lucide-react';
+import { ExternalLink, Instagram, Linkedin, Mail } from 'lucide-react';
 
 const SYNERTECH_LINKS = {
-  portfolio: 'https://synertech.ao',
-  linkedin: 'https://linkedin.com/company/synertech',
-  github: 'https://github.com/synertech',
+  portfolio: '#',
+  linkedin: '#',
+  instagram: 'https://www.instagram.com/synertech_official',
   email: 'mailto:nexusst4@gmail.com',
 };
 
