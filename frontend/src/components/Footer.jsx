@@ -62,9 +62,9 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-10 w-10 items-center justify-center rounded-lg border border-brand-gray-850 text-brand-yellow transition-colors hover:border-brand-yellow hover:bg-brand-yellow/10"
-                aria-label="GitHub SYNERTECH"
+                aria-label="Instagram SYNERTECH"
               >
-                <Github className="h-4 w-4" />
+                <Instagram className="h-4 w-4" />
               </a>
               <a
                 href={SYNERTECH_LINKS.email}

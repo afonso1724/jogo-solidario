@@ -28,7 +28,7 @@ function PublicApp() {
             <div className="mb-12 text-center">
               <h2 className="section-title">Compra / Reserva de Tickets</h2>
               <p className="mt-3 text-brand-gray-650">
-                Fluxo rápido — sem login. Escolha reserva ou compra imediata.
+                Escolha reserva ou compra imediata.
               </p>
             </div>
             <TicketForm />
