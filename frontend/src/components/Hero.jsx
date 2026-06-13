@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, MapPin, Heart } from 'lucide-react';
 
-const EVENTO_DATA = import.meta.env.VITE_EVENTO_DATA || '2026-07-04T18:00:00Z';
+const EVENTO_DATA = import.meta.env.VITE_EVENTO_DATA || '2026-07-04T09:00:00Z';
 
 function getTimeLeft(targetDate) {
   const diff = new Date(targetDate) - new Date();
@@ -84,7 +84,7 @@ export default function Hero({ onCtaClick }) {
               </span>
               <span className="inline-flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-brand-yellow" />
-                Vila-Sede
+                Complexo Escolar Privado Nossa Senhora da Anunciação Vila-Sede
               </span>
             </div>
 
